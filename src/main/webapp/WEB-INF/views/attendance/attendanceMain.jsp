@@ -233,7 +233,7 @@
         value.push(newMonth + "-" + newDate);
     }
 
-    console.dir(value);
+
     $( function() {
         $.ajax({
             type : "POST",
@@ -347,7 +347,6 @@
             url : "/restattendance/getAtdTime",
             dataType :"json",
             success : function(data) {
-                console.log(data);
                 $("#barchart_div").empty();
                 var html="<canvas  id=myChart></canvas>"
                 $("#barchart_div").append(html);
@@ -407,7 +406,6 @@
                             if(getTime<=0) {
                                 continue;
                             }
-                            console.log(getTime);
                             myChart.data.datasets[0].data[i] = getTime;
                             myChart.data.datasets[1].data[i] = data[j].overtime;
                             myChart.update();
@@ -499,9 +497,7 @@
             type : "POST",
             url : "/restattendance/isInWork",
             success : function(data) {
-                console.log(data);
                 if(data==""){
-                    console.log("여기오나");
                     var time=getHours();
                     $("#modal").modal('show');
                     $("#workMsg").text("현재 시각:"+time+"입니다. 출근하시겠습니까?");
@@ -515,12 +511,12 @@
 
     function fn_in() {
         var out = $("input[name='out']:checked").val();
+
         $.ajax({
             type : "POST",
-            data : {out:out},
+            data : {status:out},
             url : "/restattendance/atdIn",
             success : function(data) {
-                console.log(data);
                 if(data=="updateSuccess") {
                     $("#resultModal").modal('show');
                     $("#atdResultMsg").text("출근 시간 변경이 완료되었습니다.");
@@ -564,12 +560,14 @@
                     },1000)
                     return;
                 }
-                if(hour<18){
+
+                if(hour<18 &&data==""){
                     var time=getHours();
                     $("#modal").modal('show');
                     $("#workMsg").text("아직 퇴근 시간이 아닙니다. ("+time+") 퇴근 처리 하시겠습니까?");
                     return;
                 }
+
                 if(data==""){
                     var time=getHours();
                     $("#modal").modal('show');

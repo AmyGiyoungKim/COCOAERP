@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpSession;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -133,6 +135,9 @@ public class RestAttendanceController {
     public String getReqInfo(int atd_seq){
         AtdChangeReqDTO isReq =attendanceService.isReq(atd_seq);
         if(isReq!=null){
+            if(isReq.getContents()!=null) {
+                isReq.setContents(Configurator.getReXSSFilter(isReq.getContents()));
+            }
             JSONObject json = new JSONObject(isReq);
             return json.toString();
         }
@@ -143,6 +148,7 @@ public class RestAttendanceController {
     public String getAtdList(String number){
         EmployeeDTO loginSession = (EmployeeDTO)session.getAttribute("loginDTO");
         List<AttendanceDTO> atdList = attendanceService.getAttendanceList2(loginSession.getCode(),number);
+
         JSONArray json = new JSONArray(atdList);
         return json.toString();
     }
@@ -156,6 +162,7 @@ public class RestAttendanceController {
         int parse_end_time = Integer.parseInt(end_time.replaceAll("-",""));
         parse_end_time++;
         List<AttendanceDTO> getSearchAtd = attendanceService.getSearchAtd(loginSession.getCode(),number,search,start_time,parse_end_time);
+
         JSONArray json = new JSONArray(getSearchAtd);
         return json.toString();
     }
@@ -165,6 +172,7 @@ public class RestAttendanceController {
         dto.setContents(Configurator.XssReplace(dto.getContents()));
         EmployeeDTO loginSession = (EmployeeDTO)session.getAttribute("loginDTO");
         dto.setEmp_code(loginSession.getCode());
+        System.out.println(dto);
         int addChangeReq=attendanceService.addChangeReq(dto);
         if(addChangeReq>0){
             return "successInsert";
@@ -198,6 +206,7 @@ public class RestAttendanceController {
     @RequestMapping("/getIsReqInfo")
     public String getIsReqInfo(int atd_seq){
         AtdChangeReqDTO getIsReqInfo=attendanceService.getIsReqInfo(atd_seq);
+        getIsReqInfo.setComments(Configurator.getReXSSFilter(getIsReqInfo.getComments()));
         JSONObject json = new JSONObject(getIsReqInfo);
         return json.toString();
     }

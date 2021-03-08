@@ -320,7 +320,6 @@
                 data: $("#tempconfirm").serialize(),
                 dataType: "json",
                 success: function (data) {
-                    console.log(data);
                     var html = "";
                     for (var i = 0; i < data.length; i++) {
                         html += "<div class=\"row p-2 w-100 m-0\" id=closeconfirm" + data[i].code + " style=\"border-bottom:1px solid #c9c9c9\">";
@@ -597,7 +596,6 @@
                     },20)
                 }
                 if(d3==0&&d2!=0&&d1==0){
-                    console.log("팀");
                     for(var i=1;i<data.length;i=i+2){
                         for(var j=0;j<data[i].length;j++){
                             fn_getSearchDeptList(data[i][j].dept_code).then(fn_getSearchTeamList(data[i][j].code));
@@ -608,7 +606,6 @@
                     },20)
                 }
                 if(d3==0&&d2!=0&&d1!=0){
-                    console.log("둘다");
                     for(var i=1;i<data.length;i=i+2){
                         for(var j=0;j<data[i].length;j++){
                             fn_getSearchDeptList(data[i][j].dept_code).then(fn_getSearchTeamList(data[i][j].code));
@@ -761,7 +758,6 @@
             data:$("#confirmform").serialize(),
             dataType :"json",
             success: function (data) {
-                console.log(data[0].pos_name);
                 html="";
                 for(var i=0;i<data.length;i++){
                     html+="<div class=\"col-md-1 p-0 col-3 m-md-3 m-3 confirmbox\">";
@@ -783,6 +779,22 @@
         });
     }
 
+    var entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '/': '&#x2F;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+    };
+
+    function escapeHtml (string) {
+        return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+            return entityMap[s];
+        });
+    }
 
 
 
@@ -863,7 +875,6 @@
             url: "/restdocument/deldocfile.document",
             data: {seq},
             success: function (data) {
-                console.log(data);
             }
         });
     }
@@ -880,7 +891,6 @@
                 contentType: false,
                 processData: false,
                 success: function (result) {
-                    console.log(result);
                     $("#doc_seq").val(result);
                     resolve(result);
                 }

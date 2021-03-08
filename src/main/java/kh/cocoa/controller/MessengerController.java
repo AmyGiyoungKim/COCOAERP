@@ -2,6 +2,7 @@ package kh.cocoa.controller;
 
 import kh.cocoa.dto.*;
 import kh.cocoa.service.*;
+import kh.cocoa.statics.Configurator;
 import org.json.JSONArray;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +75,7 @@ public class MessengerController {
             String type = chatList.get(i).getType();
             String profile = fservice.getChatProfile(empcode,type);
             chatList.get(i).setProfile(profile);
+            chatList.get(i).setContents(Configurator.getReXSSFilter(chatList.get(i).getContents()));
         }
     	model.addAttribute("memberList", memberList);
     	model.addAttribute("chatList", chatList);
@@ -110,6 +112,8 @@ public class MessengerController {
         }
         // 채팅방 사진 불러오기
         String chatProfile = fservice.getChatProfile(code,messenger.getType());
+        // XSS 처리 - messenger.name / partyDTO.empname / partyDTO.deptname / partyDTO.teamname
+
         //messenger : 해당 시퀀스의 메신저 테이블 정보
         model.addAttribute("messenger", messenger);
         model.addAttribute("seq", seq); //??messenger에 담는걸로 수정??
@@ -201,9 +205,10 @@ public class MessengerController {
     }
 
     @RequestMapping("messengerSearch")
-    public String messengerSearch(String contents,Model model){
+    public String messengerSearch(String contents, Model model){
         EmployeeDTO loginDTO = (EmployeeDTO)session.getAttribute("loginDTO");
         int code = loginDTO.getCode();
+        int cpage = 1;
         // 로그인한 사람의 이름은 제외해야함
         //(1) 멤버이름으로 찾기
         List<EmployeeDTO> memberList = eservice.searchEmployeeByName(code, contents);
@@ -211,8 +216,10 @@ public class MessengerController {
         List<EmployeeDTO> deptList = eservice.searchEmployeeByDeptname(code, contents);
         //(3) 팀이름으로 찾기
         List<EmployeeDTO> teamList = eservice.searchEmployeeByTeamname(code, contents);
-        //(5) 메세지 찾기
-        List<MessageViewDTO> messageList = msgservice.searchMsgByContents(code, contents);
+        //(4) 메세지 찾기
+        //List<MessageViewDTO> messageList = msgservice.searchMsgByContents(code, contents);
+        //(5) 메세지 cpage로 찾기
+        List<MessageViewDTO> messageListByCpage = msgservice.searchMsgByContentsByCpage(code,contents,cpage);
 
         // 의진 추가 - 참여자의 프로필 이미지 추가하기
         for(int i=0; i<memberList.size(); i++){
@@ -227,16 +234,15 @@ public class MessengerController {
             String profile = fservice.getProfile(teamList.get(i).getCode());
             teamList.get(i).setProfile(profile);
         }
-        for(int i=0; i<messageList.size(); i++){
-            String profile = fservice.getProfile(messageList.get(i).getEmp_code());
-            messageList.get(i).setProfile(profile);
+        for(int i=0; i<messageListByCpage.size(); i++){
+            String profile = fservice.getProfile(messageListByCpage.get(i).getEmp_code());
+            messageListByCpage.get(i).setProfile(profile);
         }
-
         model.addAttribute("searchKeyword",contents);
         model.addAttribute("memberList",memberList);
         model.addAttribute("deptList",deptList);
         model.addAttribute("teamList",teamList);
-        model.addAttribute("messageList",messageList);
+        model.addAttribute("messageList",messageListByCpage);
         return "/messenger/messengerSearch";
     }
 
@@ -245,6 +251,7 @@ public class MessengerController {
     public String messengerSearchAjax(String contents){
         EmployeeDTO loginDTO = (EmployeeDTO)session.getAttribute("loginDTO");
         int code = loginDTO.getCode();
+        int cpage=1;
         JSONArray jArrayMember = new JSONArray();
         JSONArray jArrayDept = new JSONArray();
         JSONArray jArrayTeam = new JSONArray();
@@ -259,7 +266,9 @@ public class MessengerController {
         //(3) 팀이름으로 찾기
         List<EmployeeDTO> teamList = eservice.searchEmployeeByTeamname(code, contents);
         //(4) 메세지 찾기
-        List<MessageViewDTO> messageList = msgservice.searchMsgByContents(code, contents);
+        //List<MessageViewDTO> messageList = msgservice.searchMsgByContents(code, contents);
+        //(5) 메세지 cpage로 찾기
+        List<MessageViewDTO> messageListByCpage = msgservice.searchMsgByContentsByCpage(code,contents,cpage);
 
         // 의진 추가 - 참여자의 프로필 이미지 추가하기
         for(int i=0; i<memberList.size(); i++){
@@ -274,9 +283,9 @@ public class MessengerController {
             String profile = fservice.getProfile(teamList.get(i).getCode());
             teamList.get(i).setProfile(profile);
         }
-        for(int i=0; i<messageList.size(); i++){
-            String profile = fservice.getProfile(messageList.get(i).getEmp_code());
-            messageList.get(i).setProfile(profile);
+        for(int i=0; i<messageListByCpage.size(); i++){
+            String profile = fservice.getProfile(messageListByCpage.get(i).getEmp_code());
+            messageListByCpage.get(i).setProfile(profile);
         }
 
         // 나중에 이중for문으로 정리하기
@@ -317,21 +326,21 @@ public class MessengerController {
             jArrayTeam.put(param);
         }
         // jArrayMessage에 messageList 넣기
-        for (int i = 0; i < messageList.size(); i++) {
+        for (int i = 0; i < messageListByCpage.size(); i++) {
             param = new HashMap<>();
-            param.put("seq",messageList.get(i).getSeq());
-            param.put("contents",messageList.get(i).getContents());
-            param.put("write_date",messageList.get(i).getWrite_date());
-            param.put("emp_code",messageList.get(i).getEmp_code());
-            param.put("m_seq",messageList.get(i).getM_seq());
-            param.put("type",messageList.get(i).getType());
-            param.put("m_type",messageList.get(i).getM_type());
-            param.put("name",messageList.get(i).getName());
-            param.put("party_seq",messageList.get(i).getParty_seq());
-            param.put("party_emp_code",messageList.get(i).getEmp_code());
-            param.put("empname",messageList.get(i).getEmpname());
-            param.put("party_empname",messageList.get(i).getParty_empname());
-            param.put("profile",messageList.get(i).getProfile());
+            param.put("seq",messageListByCpage.get(i).getSeq());
+            param.put("contents",messageListByCpage.get(i).getContents());
+            param.put("write_date",messageListByCpage.get(i).getWrite_date());
+            param.put("emp_code",messageListByCpage.get(i).getEmp_code());
+            param.put("m_seq",messageListByCpage.get(i).getM_seq());
+            param.put("type",messageListByCpage.get(i).getType());
+            param.put("m_type",messageListByCpage.get(i).getM_type());
+            param.put("name",messageListByCpage.get(i).getName());
+            param.put("party_seq",messageListByCpage.get(i).getParty_seq());
+            param.put("party_emp_code",messageListByCpage.get(i).getEmp_code());
+            param.put("empname",messageListByCpage.get(i).getEmpname());
+            param.put("party_empname",messageListByCpage.get(i).getParty_empname());
+            param.put("profile",messageListByCpage.get(i).getProfile());
             jArrayMessage.put(param);
         }
         jArrayAll.put(jArrayMember);
@@ -357,8 +366,6 @@ public class MessengerController {
             String profile = fservice.getProfile(memberList.get(i).getCode());
             memberList.get(i).setProfile(profile);
         }
-
-        // 나중에 이중for문으로 정리하기
         // jArrayMember에 memberList 넣기
         for (int i = 0; i < memberList.size(); i++) {
             param = new HashMap<>();
@@ -392,6 +399,7 @@ public class MessengerController {
     }
     
     //멤버 추가를 위한 리스트 열기
+    //XSS 처리?
     @RequestMapping("openMemberList")
     public String openMemberList(Model model, int seq) {
     	System.out.println("openMemberList 도착 ㅣ seq : "+seq);
@@ -411,7 +419,8 @@ public class MessengerController {
     public int modifChatName(MessengerDTO messenger) {
     	System.out.println("ModifChatName 도착!!");
     	System.out.println("messengerDTO : "+messenger);
-    	int result = mservice.updateName(messenger.getSeq(), messenger.getName());
+        System.out.println("채팅방 이름 변경 xss : " + Configurator.XssReplace(messenger.getName()));
+    	int result = mservice.updateName(messenger.getSeq(), Configurator.XssReplace(messenger.getName()));
     	return result;
     }
 
@@ -462,7 +471,6 @@ public class MessengerController {
     	}
     	int insertMemResult = mpservice.setMessengerMember(list);
     	System.out.println("인원 추가 결과 : "+insertMemResult);
-
 
     	return insertMemResult;
     }

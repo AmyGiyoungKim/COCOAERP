@@ -27,6 +27,10 @@
             color: #666;
             font-size: 36px;
         }
+        .fc-toolbar-chunk {
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
 <body onload="printClock()">
@@ -48,7 +52,7 @@
                                     <ul class="list-group list-group-horizontal-sm">
                                         <li class="list-group-item" id="countLate">지각 :</li>
                                         <li class="list-group-item" id="countIn">출근 :</li>
-                                        <li class="list-group-item" id="countWorkTime">총 근무 시간 : 0시간 0분</li>
+                                        <li class="list-group-item" id="countWorkTime">총 근무 시간 :</li>
                                     </ul>
                                 </div>
                             </div>
@@ -98,12 +102,12 @@
 
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 headerToolbar: {
-                    left: 'dayGridMonth,dayGridWeek,dayGridDay',
-                    center: 'title',
-                    right: 'prev,next'
+                    left: '',
+                    center: 'prev title next',
+                    right: 'today'
                 },
 
-                local : "ko",
+                locale : "ko",
                 navLinks: true,
                 businessHours: true,
                 editable: false,
@@ -114,11 +118,15 @@
                             <c:choose>
                                 <c:when test="${i.status=='IN'}">
                                     title: '출근',
-                                    color: 'blue'
+                                    color: 'blue',
                                 </c:when>
                                 <c:when test="${i.status=='LATE'}">
                                     title: '지각',
                                     color: 'yellow'
+                                </c:when>
+                                <c:when test="${i.status=='OUT'}">
+                                    title: '외근',
+                                    color: 'black'
                                 </c:when>
                             </c:choose>
                         },
@@ -151,9 +159,7 @@
                 success: function (result) {
                     $("#countLate").html("지각 : "+result[0]+"번");
                     $("#countIn").html("출근 : "+result[1]+"번");
-                    if(result.length>2){
-                        $("#countWorkTime").html("총 근무 시간 : "+result[2]+"시간 "+result[3]+"분");
-                    }
+                    $("#countWorkTime").html("총 근무 시간 : "+result[2]+"시간 "+result[3]+"분");
                 }
             })
         });

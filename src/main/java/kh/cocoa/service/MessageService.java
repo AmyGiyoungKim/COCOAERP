@@ -38,12 +38,6 @@ public class MessageService implements MessageDAO {
     }
 
     @Override
-    public int getMessagePageCount(int emp_code){
-        emp_code=1001;
-        return msgdao.getMessagePageCount(emp_code);
-    }
-
-    @Override
 	public int insertMessageGotSeq(MessageDTO msgdto) {
     	return msgdao.insertMessageGotSeq(msgdto);
     }
@@ -53,11 +47,26 @@ public class MessageService implements MessageDAO {
     public List<MessageViewDTO> searchMsgByContents(int code, String contents){
         return msgdao.searchMsgByContents(code, contents);
     }
+    @Override
+    public List<MessageViewDTO> searchMsgByContentsByCpage(int code, String contents, int startRowNum, int endRowNum){
+        return msgdao.searchMsgByContentsByCpage(code, contents, startRowNum, endRowNum);
+    }
+    public List<MessageViewDTO> searchMsgByContentsByCpage(int code, String contents, int cpage){
+        int startRowNum = (cpage - 1) * Configurator.recordCountPerPage + 1;
+        int endRowNum = startRowNum + Configurator.recordCountPerPage - 1;
+        return msgdao.searchMsgByContentsByCpage(code, contents, startRowNum, endRowNum);
+    }
 
     // 채팅창에서 검색한 메세지 찾기
     @Override
     public List<MessageDTO> searchMsgInChatRoom(int m_seq, String contents){
         return msgdao.searchMsgInChatRoom(m_seq,contents);
+    }
+
+    // seq.nextval 선택
+    @Override
+    public int selectMessageSeq(){
+        return msgdao.selectMessageSeq();
     }
     
 }
